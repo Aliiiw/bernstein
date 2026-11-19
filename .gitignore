@@ -1,0 +1,17 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment & Secrets (NEVER commit credentials!)
+.env
+.env.*
+*.secret.yaml
+*.secret.yml
+secrets/
+*kubeconfig*
+*.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
