@@ -1,0 +1,54 @@
+services:
+  redis:
+    image: redis:8-alpine
+    command: [ "redis-server", "--requirepass", "mysecretredis" ]
+
+  poll:
+    build: ./poll-application/poll
+    ports:
+      - "8080:80"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PASSWORD: mysecretredis
+    depends_on:
+      - redis
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: poll
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpostgres
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./poll-application/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+  worker:
+    build: ./poll-application/worker
+    environment:
+      REDIS_HOST: redis
+      REDIS_PASSWORD: mysecretredis
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: mysecretpostgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: poll
+      POSTGRES_USER: postgres
+    depends_on:
+      - redis
+      - postgres
+
+  result:
+    build: ./poll-application/result
+    ports:
+      - "8081:80"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: mysecretpostgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: poll
+      POSTGRES_USER: postgres
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
