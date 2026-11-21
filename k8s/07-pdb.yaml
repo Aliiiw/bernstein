@@ -1,0 +1,32 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: poll-pdb
+  namespace: poll-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: poll
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-pdb
+  namespace: poll-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: result-pdb
+  namespace: poll-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: result
