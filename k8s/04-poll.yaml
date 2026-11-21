@@ -18,10 +18,12 @@ spec:
       labels:
         app: poll
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: poll
-          image: bernstein-poll:v1
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/aliiiw/bernstein-poll:v1
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:
