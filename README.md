@@ -135,3 +135,50 @@ To remove the entire deployment from the cluster:
 ```bash
 kubectl delete namespace poll-app
 ```
+
+---
+
+<div dir="rtl">
+
+## راهنمای فارسی (خلاصه پروژه)
+
+این پروژه پیاده‌سازی و استقرار کامل یک اپلیکیشن چندسرویسی رای‌گیری (**Poll Application**) روی **Kubernetes** با قابلیت **آپدیت بدون قطعی (Zero-Downtime)** است.
+
+### معماری سیستم
+- **`poll` (Python / Flask):** صفحه رای‌گیری که رای‌ها را به صف Redis ارسال می‌کند (`LoadBalancer` روی پورت `8080`).
+- **`redis` (Redis 8):** صف سریع داخل حافظه (In-Memory Queue) با احراز هویت پسورد (`ClusterIP` داخلی).
+- **`worker` (Java 25):** سرویس پس‌زمینه که رای‌ها را از Redis می‌خواند و در PostgreSQL ذخیره می‌کند.
+- **`postgres` (PostgreSQL 18):** دیتابیس اصلی به صورت `StatefulSet` همراه با دیسک پایدار (`1Gi PVC`) و اجرای خودکار `schema.sql` (`ClusterIP` داخلی).
+- **`result` (Node.js / Express + Socket.IO):** صفحه نمایش زنده نتایج رای‌گیری (`LoadBalancer` روی پورت `8081`).
+
+### نحوه اجرا از صفر
+1. فایل نمونه `.env.example` را به `.env` کپی کنید و مقادیر رجیستری خصوصی (`REGISTRY_*`) و پسوردها (`POSTGRES_PASSWORD` و `REDIS_PASSWORD`) را در آن وارد کنید *(فایل `.env` در `.gitignore` قرار دارد و هرگز در Git ذخیره نمی‌شود)*.
+2. اسکریپت دیپلوی را اجرا کنید:
+
+</div>
+
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+<div dir="rtl">
+
+3. برای تست **آپدیت بدون قطعی** پس از تغییر کد، فقط تگ نسخه جدید را بدهید:
+
+</div>
+
+```bash
+IMAGE_TAG=v2 ./scripts/deploy.sh
+```
+
+<div dir="rtl">
+
+### ویژگی‌های فنی کلیدی پیاده‌سازی‌شده
+- **جداسازی کامل محیط** در Namespace اختصاصی (`poll-app`).
+- **امنیت:** نگهداری پسوردها در Kubernetes `Secret` (خارج از Git) و داخلی نگه داشتن `redis` و `postgres` با `ClusterIP`.
+- **آپدیت بدون قطعی واقعی:** ترکیب `replicas: 2`، `RollingUpdate (maxUnavailable: 0, maxSurge: 1)`، `livenessProbe` و `readinessProbe` (`/healthz` و `/readyz`) و `lifecycle.preStop (sleep 5)`.
+- **مقاومت در برابر تخلیه نود (`kubectl drain`):** تعریف `PodDisruptionBudget` با `minAvailable: 1` برای سرویس‌های اصلی.
+- **مدیریت منابع:** تعیین `requests` و `limits` برای CPU و حافظه در تمامی کانتینرها.
+
+</div>
